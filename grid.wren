@@ -1,28 +1,45 @@
 class Grid {
-    construct new(a_width, a_height, a_zero){
+    construct new(a_width, a_height, a_zero) {
+        _tiles = List.new()
         _width = a_width
         _height = a_height
-        _grid = List.new()
 
-        for(tile in 0... _width * _height) {
-            _grid.add(a_zero)
+        for (tile in 0..._width * _height) {
+            _tiles.add(a_zero)
         }
     }
 
+    GetWidth { _width }
+    GetHeight { _height}
+
+    GetTile (a_x, a_y) { _tiles[a_y * _width + a_x] }
+    SetTile (a_x, a_y, a_tileType) { 
+        _tiles[a_y * _width + a_x] = Tile.new()
+    }
+
+    SetAllTiles(a_tileType) {
+        for (i in 0..._width * _height) {
+            _tiles[i] = Tile.new(a_tileType)
+        }
+    }
+
+}
+
+class TileType {
+    construct new(a_tileSprite){
+        _tileSprite
+    }
+
+    tileSprite { _tileSprite }
+
+}
+
+//Tile is the data inside the grid, populated by TileTypes which are essentially
+//predefined data of possible Tile instances.
+class Tile {
+    construct new(a_tileType) {
+        _tileSprite = a_tileType.tileSprite
+    }
     
 
-    [x,y]=(value) {
-        _grid[y * _width + x] = value
-    }
-
-    [x,y] { _grid[y * _width + x] }
-    [vec2]{ _grid[vec2.y * _width + vec2.x] }
-    width   { _width }
-    height  { _height }
-
-    swap(fromX, fromY, toX, toY){
-        var temp = this[toX, toY]
-        this[toX, toY] = this[fromX, fromY]
-        this[fromX, fromY] = temp
-    }
 }
