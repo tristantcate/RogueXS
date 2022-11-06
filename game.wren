@@ -4,6 +4,8 @@ System.print("Wren just got compiled to bytecode")
 
 // The xs module is 
 import "xs" for Render, Data, Input
+import "xs_math" for Vec2
+
 import "grid" for Grid, TileType, Tile
 
 
@@ -26,7 +28,7 @@ class Game {
 
         __time = 0
 
-        __grid = Grid.new(50, 50, 0)
+        __grid = Grid.new(20, 20, 0)
         
 
         var tileImage = Render.loadImage("[game]/Art/Tiles/tile0.png")
@@ -37,6 +39,8 @@ class Game {
 
         __tileType = TileType.new(tileImage)
         __grid.SetAllTiles(__tileType)
+
+        __tileSize = Vec2.new(32.0, 16.0)
 
     }    
 
@@ -50,11 +54,18 @@ class Game {
     // The render method is called once per tick, right after update.
     static render() {
        
-
+        var gridRenderCenterOffset = Vec2.new(
+            __tileSize.x * __grid.GetWidth / 2.0 - __tileSize.x / 2.0,
+            __tileSize.y * __grid.GetHeight / 2.0)
+            
+        var renderTileSize = (1/__spriteImageSize) * __tileSize.x
 
         for(x in 0...__grid.GetWidth){
             for (y in 0...__grid.GetHeight) {
-                Render.sprite(__tilesprite, x , y, 0.0, 1/__spriteImageSize, 
+
+                var tilePos =  Vec2.new(x  * __tileSize.x, y * __tileSize.y) - gridRenderCenterOffset
+
+                Render.sprite(__tilesprite, tilePos.x, tilePos.y, 0.0, renderTileSize, 
                 0.0, 0xFFFFFFFF, 0x00000000, Render.spriteCenter)
             }
         }
