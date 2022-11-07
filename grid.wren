@@ -21,7 +21,17 @@ class Grid {
 
         
         for (tile in 0..._width * _height) {
-            _tiles.add(Tile.new(_tileTypes[0]))
+                _tiles.add(Tile.new(_tileTypes[0]))
+        }
+
+
+        for(x in 0..._width){   
+            for(y in 0..._height) {
+
+                if(x == 0 || y == 0 || x == _width-1 || y == _height-1){
+                    this.SetTile(x, y, Tile.new(_tileTypes[1]))
+                }
+            }
         }
 
 
@@ -92,6 +102,9 @@ class Grid {
         if(a_tileVec2.x < 0 || a_tileVec2.y < 0 || a_tileVec2.x >= _width - 1 || a_tileVec2.y >= _height - 1){
             return false
         }
+        if(getTile(a_tileVec2).IsOccupied()){
+            return false
+        }
 
         return getTile(a_tileVec2).passable
     }
@@ -138,11 +151,18 @@ class Tile {
         _tileSprite = a_tileType.tileSprite
         _tileImageSize = a_tileType.tileImageSize
         _passable = a_tileType.passable
+        _occupiedBy = 0
     }
     
     tileSprite {_tileSprite}
     tileImageSize {_tileImageSize}
     passable { _passable }
+    occupiedBy { _occupiedBy }
+    IsOccupied() { _occupiedBy != 0}
+    
+    SetOccupiedBy (a_occupier) {
+        _occupiedBy = a_occupier
+    }
 
 
 }
