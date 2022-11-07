@@ -108,6 +108,8 @@ class Game {
 
             Fiber.yield(__yieldTime)
         }
+
+        System.print("Gameloop Ended!")
     }
         
 }

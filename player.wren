@@ -44,19 +44,43 @@ class Enemy is Actionable {
         }
 
 
-        var addMovePos = Vec2.new(1.0, 0.0)
-
         var moveDir = _player.GetGridPos() - _gridPos
-        if(MathF.abs(moveDir.x) > MathF.abs(moveDir.y)){
-            addMovePos = Vec2.new(moveDir.x, 0).normalise
-        }else{
-            addMovePos = Vec2.new(0, moveDir.y).normalise
+        var xMove = Vec2.new(MathF.clamp(moveDir.x,-1,1), 0.0)
+        var yMove = Vec2.new(0.0, MathF.clamp(moveDir.y, -1, 1))
+
+        var canMoveX = _gridRef.CanMoveToTile(_gridPos + xMove)
+        var canMoveY = _gridRef.CanMoveToTile(_gridPos + yMove)
+
+        if(!canMoveX && !canMoveY){
+            super.SetTurn(false)
+            return
+        }
+
+        if(!canMoveX && canMoveY){
+            _gridPos = _gridPos + yMove
+            super.SetTurn(false)
+            return
+        }
+
+        if(canMoveX && !canMoveY){
+            _gridPos = _gridPos + xMove
+            super.SetTurn(false)
+            return
         }
 
 
+        var addMovePos = Vec2.new(0.0, 0.0)
+
+        if(MathF.abs(moveDir.x) > MathF.abs(moveDir.y)){
+            addMovePos = xMove
+        }else{
+            addMovePos = yMove
+        }
 
         _gridPos = _gridPos + addMovePos
+
         super.SetTurn(false)
+
     }
 
 
@@ -108,7 +132,9 @@ class Player is Actionable {
             moveDir.y = moveDir.y - 1.0
         }
 
-        if(_playerGridPos != _playerGridPos + moveDir){
+        var canMoveToTile = _gridRef.CanMoveToTile(_playerGridPos + moveDir)
+
+        if(_playerGridPos != _playerGridPos + moveDir && canMoveToTile){
             _playerGridPos = _playerGridPos + moveDir
             super.SetTurn(false)
         }
