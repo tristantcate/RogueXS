@@ -29,8 +29,9 @@ class Game {
 
         __time = 0
 
-
-
+        __fiberTime = 0
+        __yieldTime = 0.5
+        __gameLoop = Fiber.new{this.GameLoop()}
         
         __tileSize = Vec2.new(16.0, 16.0)
         __grid = Grid.new(20, 20, 0, __tileSize)
@@ -39,20 +40,52 @@ class Game {
 
         __actionables = List.new()
 
-        __actionables.add( Player.new("[game]/Art/hero.png", __grid, __playerStartPos))
 
-        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(10, 5)))
-        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(14, 8)))
-        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(5, 12)))
+        __player = Player.new("[game]/Art/hero.png", __grid, __playerStartPos)
+        __actionables.add(__player)
+
+        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(10, 5), __player))
+        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(14, 8), __player))
+        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(5, 12),__player))
+
+        __player.GiveTurn()
+        __currentCharacterID = 0
+        
     }    
 
     static update(dt) {
 
         __time = __time + dt
 
+        __fiberTime = __fiberTime - dt
+        if(__fiberTime <= 0) {
+            if(!__gameLoop.isDone){
+                __gameLoop.call()
+
+            }
+        }
+        
+
+        var currentCharacter = 0
+
         for (actionable in __actionables) {
             actionable.Update(dt)
+            if(actionable.HasTurn()){
+                currentCharacter = actionable
+            }
         }
+
+        if(currentCharacter == 0){
+
+            __currentCharacterID =  __currentCharacterID + 1
+            if(__currentCharacterID >= __actionables.count){
+                __currentCharacterID = 0
+            }
+
+            System.print("Actionable character: %(__currentCharacterID)")
+            __actionables[__currentCharacterID].GiveTurn()
+        }
+        
     }
 
     // The render method is called once per tick, right after update.
@@ -64,5 +97,11 @@ class Game {
             actionable.Render()
         }
 
+    }
+
+    static GameLoop(){
+
+
+        Fiber.yield(__yieldTime)
     }
 }
