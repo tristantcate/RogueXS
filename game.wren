@@ -50,6 +50,8 @@ class Game {
 
         __player.GiveTurn()
         __currentCharacterID = 0
+
+        this.GameLoop()
         
     }    
 
@@ -60,31 +62,14 @@ class Game {
         __fiberTime = __fiberTime - dt
         if(__fiberTime <= 0) {
             if(!__gameLoop.isDone){
-                __gameLoop.call()
+                __fiberTime = __gameLoop.call()
 
             }
         }
-        
-
-        var currentCharacter = 0
-
         for (actionable in __actionables) {
             actionable.Update(dt)
-            if(actionable.HasTurn()){
-                currentCharacter = actionable
-            }
         }
-
-        if(currentCharacter == 0){
-
-            __currentCharacterID =  __currentCharacterID + 1
-            if(__currentCharacterID >= __actionables.count){
-                __currentCharacterID = 0
-            }
-
-            System.print("Actionable character: %(__currentCharacterID)")
-            __actionables[__currentCharacterID].GiveTurn()
-        }
+        
         
     }
 
@@ -101,7 +86,28 @@ class Game {
 
     static GameLoop(){
 
+        while(true){
+            var currentCharacter = 0
 
-        Fiber.yield(__yieldTime)
+            for (actionable in __actionables) {
+                if(actionable.HasTurn()){
+                    currentCharacter = actionable
+                }
+            }
+
+            if(currentCharacter == 0){
+
+                __currentCharacterID =  __currentCharacterID + 1
+                if(__currentCharacterID >= __actionables.count){
+                    __currentCharacterID = 0
+                }
+
+                __actionables[__currentCharacterID].GiveTurn()
+            }
+
+
+            Fiber.yield(__yieldTime)
+        }
     }
+        
 }
