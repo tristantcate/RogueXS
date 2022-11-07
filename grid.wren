@@ -19,43 +19,15 @@ class Grid {
         _tileTypes.add(TileType.new("[game]/Art/Tiles/tile0.png", "WalkTile", true))
         _tileTypes.add(TileType.new("[game]/Art/Tiles/wall0.png", "BrownTile", false))
 
-        
-        for (tile in 0..._width * _height) {
-                _tiles.add(Tile.new(_tileTypes[0]))
-        }
-
-
-        for(x in 0..._width){   
-            for(y in 0..._height) {
-
-                if(x == 0 || y == 0 || x == _width-1 || y == _height-1){
-                    this.SetTile(x, y, Tile.new(_tileTypes[1]))
-                }
-            }
-        }
-
-
         _rand = Random.new()
         
-        var randomWallAmountPerQuarter = 6
-        for(randomTile in 0...randomWallAmountPerQuarter){
-            
-
-            var x = _rand.int(_width / 2, _width - 1)
-            var y = _rand.int(_height / 2, _height - 1)
-
-            this.SetTile(x, y, Tile.new(_tileTypes[1]))
-
-            //Symmetry
-            this.SetTile(_width - (x + 1), y, Tile.new(_tileTypes[1]))
-            this.SetTile(x, _height - (y + 1), Tile.new(_tileTypes[1]))
-            this.SetTile(_width - (x + 1), _height - (y + 1), Tile.new(_tileTypes[1]))
-        }
-
         
+
+        // this.GenerateSymmetricRoom()
 
         
     }
+    
 
     GetWidth { _width }
     GetHeight { _height}
@@ -108,6 +80,51 @@ class Grid {
 
         return getTile(a_tileVec2).passable
     }
+
+    GenerateSymmetricRoom(){
+
+        var yieldTime = 0.02
+
+        for (tile in 0..._width * _height) {
+                _tiles.add(Tile.new(_tileTypes[0]))
+        }
+
+
+        for(x in 0..._width){   
+            for(y in 0..._height) {
+
+                if(x == 0 || y == 0 || x == _width-1 || y == _height-1){
+                    this.SetTile(x, y, Tile.new(_tileTypes[1]))
+                    Fiber.yield(yieldTime)
+                }
+            }
+        }
+
+
+        
+        var randomWallAmountPerQuarter = 12
+        for(randomTile in 0...randomWallAmountPerQuarter){
+            
+
+            var x = _rand.int(_width / 2, _width - 1)
+            var y = _rand.int(_height / 2, _height - 1)
+
+            this.SetTile(x, y, Tile.new(_tileTypes[1]))
+            Fiber.yield(yieldTime)
+
+            //Symmetry
+            this.SetTile(_width - (x + 1), y, Tile.new(_tileTypes[1]))
+            Fiber.yield(yieldTime)
+
+            this.SetTile(x, _height - (y + 1), Tile.new(_tileTypes[1]))
+            Fiber.yield(yieldTime)
+            
+            this.SetTile(_width - (x + 1), _height - (y + 1), Tile.new(_tileTypes[1]))
+            Fiber.yield(yieldTime)
+        }
+    }
+
+
 
     Render(){
 

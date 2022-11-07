@@ -29,10 +29,8 @@ class Game {
 
         __time = 0
 
-        __fiberTime = 0
-        __yieldTime = 0.5
-        __gameLoop = Fiber.new{this.GameLoop()}
         
+
         __tileSize = Vec2.new(16.0, 16.0)
         __grid = Grid.new(20, 20, 0, __tileSize)
        
@@ -51,7 +49,19 @@ class Game {
         __player.GiveTurn()
         __currentCharacterID = 0
 
-        this.GameLoop()
+       
+        __gridRenderYieldTime = 0.05
+        __gameplayYieldTime = 0.33
+
+        __fiberTime = __gameplayYieldTime
+
+        __gridRenderLoop = Fiber.new{__grid.GenerateSymmetricRoom()}
+        __gameLoop = Fiber.new{this.GameLoop()}
+
+        __currentLoop = __gridRenderLoop
+        __currentYieldTime = __gridRenderYieldTime
+
+        __grid.GenerateSymmetricRoom()
         
     }    
 
@@ -59,16 +69,29 @@ class Game {
 
         __time = __time + dt
 
-        __fiberTime = __fiberTime - dt
-        if(__fiberTime <= 0) {
-            if(!__gameLoop.isDone){
-                __fiberTime = __gameLoop.call()
-
-            }
-        }
         for (actionable in __actionables) {
             actionable.Update(dt)
         }
+
+        if(__fiberTime == null){
+            __fiberTime = 0
+        }
+
+        __fiberTime = __fiberTime - dt
+        if(__fiberTime <= 0) {
+
+            if(!__currentLoop.isDone){
+                __fiberTime = __currentLoop.call()
+            }else if(__currentLoop.isDone && __currentLoop == __gridRenderLoop){
+                __currentLoop = __gameLoop
+                __currentYieldTime = __gameplayYieldTime
+                __fiberTime = 0
+                this.GameLoop()
+            }
+        }
+
+
+        
         
         
     }
@@ -106,7 +129,7 @@ class Game {
             }
 
 
-            Fiber.yield(__yieldTime)
+            Fiber.yield(__currentYieldTime)
         }
 
         System.print("Gameloop Ended!")
