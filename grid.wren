@@ -34,9 +34,9 @@ class Grid {
     GetHeight { _height}
 
     getTile (a_x, a_y) {
-        var x = a_x.floor
-        var y = a_y.floor
-        var index = (y * _width + x).floor
+        var x = a_x.round
+        var y = a_y.round
+        var index = (y * _width + x).round
         // System.print("[%(x), %(y)]")
         return _tiles[index]
     }
@@ -48,8 +48,8 @@ class Grid {
     }
 
     SetTile (a_x, a_y, a_tileType) { 
-        a_x = a_x.floor
-        a_y = a_y.floor
+        a_x = a_x.round
+        a_y = a_y.round
         _tiles[a_y * _width + a_x] = Tile.new(a_tileType)
     }
 
@@ -105,7 +105,7 @@ class Grid {
         }
 
         var minBoxSize = Vec2.new(4,4)
-        var maxBoxSize = Vec2.new(6,6)
+        var maxBoxSize = Vec2.new(10,10)
 
         var boxes = List.new()
         boxes.add(BspBox.new(Vec2.new(0,0), Vec2.new(_width-1, _height-1)))
@@ -121,6 +121,7 @@ class Grid {
             for(box in boxes) {
 
                 if(box.size.x < maxBoxSize.x && box.size.y < maxBoxSize.y){
+                    newBoxList.add(box)
                     continue
                 }
 
@@ -320,13 +321,15 @@ class Grid {
                     Fiber.yield(yieldTime)
                     continue
                 }
-
-                // if(x == 0 || y == 0 || x == _width-1 || y == _height-1){
-                //     this.SetTile(x, y, Tile.new(_tileTypes[1]))
-                //     Fiber.yield(yieldTime)
-                // }
             }
         }
+
+
+        for(box in boxes){   
+           
+        }
+
+
     }
 
     

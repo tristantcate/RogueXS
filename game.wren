@@ -55,13 +55,13 @@ class Game {
 
         __fiberTime = __gameplayYieldTime
 
-        __gridRenderLoop = Fiber.new{__grid.GenerateRandomWalk()}
+        __gridRenderLoop = Fiber.new{__grid.GenerateBSP()}
         __gameLoop = Fiber.new{this.GameLoop()}
 
         __currentLoop = __gridRenderLoop
         __currentYieldTime = __gridRenderYieldTime
 
-        __grid.GenerateRandomWalk()
+        __grid.GenerateBSP()
         
     }    
 
