@@ -31,8 +31,8 @@ class Game {
 
         
 
-        __tileSize = Vec2.new(16.0, 16.0)
-        __grid = Grid.new(20, 20, 0, __tileSize)
+        __tileSize = Vec2.new(8.0, 8.0)
+        __grid = Grid.new(40, 40, 0, __tileSize)
        
         __playerStartPos = Vec2.new(4.0, 7.0)
 
@@ -55,13 +55,13 @@ class Game {
 
         __fiberTime = __gameplayYieldTime
 
-        __gridRenderLoop = Fiber.new{__grid.GenerateSymmetricRoom()}
+        __gridRenderLoop = Fiber.new{__grid.GenerateRandomWalk()}
         __gameLoop = Fiber.new{this.GameLoop()}
 
         __currentLoop = __gridRenderLoop
         __currentYieldTime = __gridRenderYieldTime
 
-        __grid.GenerateSymmetricRoom()
+        __grid.GenerateRandomWalk()
         
     }    
 
