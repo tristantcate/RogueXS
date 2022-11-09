@@ -22,7 +22,7 @@ class Grid {
 
         _rand = Random.new()
         
-        
+        _rooms = List.new()
 
         // this.GenerateSymmetricRoom()
 
@@ -95,6 +95,19 @@ class Grid {
 
     IsTileInBounds(a_tileVec2){
         return this.IsTileInBounds(a_tileVec2.x, a_tileVec2.y)
+    }
+
+
+    GetTilesFromBspBox(a_box){
+        var tiles = List.new()
+
+        for(x in a_box.bottomLeftVec2.x + 1...a_box.topRightVec2.x){
+            for(y in a_box.bottomLeftVec2.y + 1...a_box.topRightVec2.y){
+                _tiles.add(getTile(x,y))
+            }
+        }
+
+        return tiles
     }
 
     GenerateBSP(){
@@ -229,7 +242,7 @@ class Grid {
 
         //Merge some rooms
         for (box in boxes) {
-            if(box.merged){
+            if(box.IsMerged()){
                 continue
             }
 
@@ -237,70 +250,135 @@ class Grid {
 
                 for(mergeBox in boxes){
 
-                    if(box.merged){
+                    if(box.IsMerged()){
                         break
                     }
 
-                    if(box == mergeBox || mergeBox.merged){
+                    if(box == mergeBox || mergeBox.IsMerged()){
                         continue
                     }
 
-                    //Merge box in different function or some shit
+
+                    var removableRoomTiles = List.new()
 
                     if(box.topRightVec2.x.round == mergeBox.bottomLeftVec2.x.round) {
-
-                        System.print("Merging box [BL:%(box.bottomLeftVec2) TR:%(box.topRightVec2)] with box [BL:%(mergeBox.bottomLeftVec2) TR:%(mergeBox.topRightVec2)]")
-
-                        for(y1 in box.bottomLeftVec2.y.round + 1...box.topRightVec2.y.round){
-                            for(y2 in mergeBox.bottomLeftVec2.y.round + 1...mergeBox.topRightVec2.y.round){
-                                
-                                if(y1.round == y2.round){
-
-
-                                    mergedRoomTilesToRemove.add(Vec2.new(box.topRightVec2.x.round, y1))
-                                    //this.SetTile(box.topRightVec2.x.round, y1, _tileTypes[1])
-                                    System.print("Walltile Removed: %(box.topRightVec2.x), %(y1)")
-
-                                    Fiber.yield(yieldTime) 
-                                }
-
-                            }
+                        
+                        for (overlapPoint in this.GetOverlappingLinePoints(box.bottomLeftVec2.y, box.topRightVec2.y, mergeBox.bottomLeftVec2.y, mergeBox.topRightVec2.y)){
+                            removableRoomTiles.add(Vec2.new(box.topRightVec2.x.round, overlapPoint))
                         }
-
-                        box.Merge()
-                        mergeBox.Merge()
                     }
 
                     if(box.topRightVec2.y.round == mergeBox.bottomLeftVec2.y.round) {
 
-                        System.print("Merging box [BL:%(box.bottomLeftVec2) TR:%(box.topRightVec2)] with box [BL:%(mergeBox.bottomLeftVec2) TR:%(mergeBox.topRightVec2)]")
-
-                        for(x1 in box.bottomLeftVec2.x.round + 1...box.topRightVec2.x.round){
-                            for(x2 in mergeBox.bottomLeftVec2.x.round + 1...mergeBox.topRightVec2.x.round){
-                                
-                                if(x1.round == x2.round){
-
-
-                                    mergedRoomTilesToRemove.add(Vec2.new(x1, box.topRightVec2.y.round))
-                                    //this.SetTile(box.topRightVec2.x.round, y1, _tileTypes[1])
-                                    // System.print("Walltile Removed: %(x1, %(box.topRightVec2.y.round)")
-
-                                    Fiber.yield(yieldTime) 
-                                }
-
-                            }
+                        for (overlapPoint in (this.GetOverlappingLinePoints(box.bottomLeftVec2.y, box.topRightVec2.y, mergeBox.bottomLeftVec2.y, mergeBox.topRightVec2.y))) {
+                            removableRoomTiles.add(Vec2.new(overlapPoint, box.topRightVec2.y.round))
                         }
+                    }
+                        
+                    mergedRoomTilesToRemove = mergedRoomTilesToRemove + removableRoomTiles
 
-                        box.Merge()
-                        mergeBox.Merge()
+                    box.Merge(mergeBox)
+                    mergeBox.Merge(box)
+
+                    var newRoom = Room.new()
+                    for(tile in removableRoomTiles){
+                        newRoom.AddTile(getTile(tile.x, tile.y))
                     }
 
+                    newRoom.SetBox(box)
+                    newRoom.SetMergebox(mergeBox)
+
+                    newRoom.AddTiles(this.GetTilesFromBspBox(box))
+                    newRoom.AddTiles(this.GetTilesFromBspBox(mergeBox))
+
+                    _rooms.add(newRoom)
+
                 }
-
-
             }
         }
 
+        //Create Rooms from boxes
+
+        for (box in boxes) {
+            
+            //Merged boxes are already added while merging to keep destroyed tiles in mind
+            if(box.IsMerged()){
+                continue
+            }
+
+            var newRoom = Room.new()
+
+            newRoom.AddTiles(this.GetTilesFromBspBox(box))
+            newRoom.SetBox(box)
+
+            _rooms.add(newRoom)
+
+        }
+
+
+        //Give every room appropriate neighbors
+        //This is horrible code
+        for (room in _rooms){
+
+            var box = null
+            var neighBox = null
+            var neighDir = null
+
+            for(neighborRoom in _rooms){
+                
+                if(room == neighborRoom || room.GetRoomNeighbors().contains(neighborRoom)){
+                    continue
+                }
+
+                box = room.GetBox()
+                neighBox = neighborRoom.GetBox()
+                neighDir = this.GetBspBoxNeighborDir(box, neighBox)
+                
+                if(neighDir != null){
+                    room.AddRoomNeighbor(neighborRoom)
+
+                    
+
+                    continue
+                }
+                
+                if(room.GetMergebox() != null) {
+                    box = room.GetMergebox()
+                    neighBox = neighborRoom.GetBox()
+                    neighDir = this.GetBspBoxNeighborDir(box, neighBox)
+
+                    if(neighDir != null){
+                        room.AddRoomNeighbor(neighborRoom)
+                        continue
+                    }
+                }
+                
+                if(neighborRoom.GetMergebox() != null) {
+                    box = room.GetBox()
+                    neighBox = neighborRoom.GetMergebox()
+                    neighDir = this.GetBspBoxNeighborDir(box, neighBox)
+                    
+                if(neighDir != null){
+                        room.AddRoomNeighbor(neighborRoom)
+                        continue
+                    }
+                }
+                
+                if(room.GetMergebox() != null && neighborRoom.GetMergebox() != null) {
+                    box = room.GetMergebox()
+                    neighBox = neighborRoom.GetMergebox()
+                    neighDir = this.GetBspBoxNeighborDir(box, neighBox)
+
+                    
+                    if(neighDir != null){
+                        room.AddRoomNeighbor(neighborRoom)
+                        continue
+                    }
+                }
+
+                
+            }
+        }
 
         //Place walls along left and bottom of boxes
         for (box in boxes) {
@@ -342,9 +420,58 @@ class Grid {
             Fiber.yield(yieldTime)
         }
 
-
         //Connect rooms through the removal of single wall tile in wall
-        
+        for (room in _rooms){
+            for(neighborRoom in room.GetRoomNeighbors()){
+
+                //if()
+
+            }
+        }
+
+    }
+
+    // GetDoorFromBoxes(a_fromBox, a_toBox, a_neighDir){
+    //     if(neighDir == Vec2.new(1,0)) {
+    //         var randDoorY = _rand.int(box.topRightVec2.)
+    //     }
+    // }
+
+    GetOverlappingLinePoints(a_line1_low, a_line1_high, a_line2_low, a_line2_high) {
+        a_line1_low = a_line1_low.round
+        a_line1_high = a_line1_high.round
+        a_line2_low = a_line2_low.round
+        a_line2_high = a_line2_high.round
+
+        var overlappingPoints = List.new()
+
+        for(p1 in a_line1_low + 1...a_line1_high){
+            for(p2 in a_line2_low + 1...a_line2_high){
+                
+                if(p1.round == p2.round){
+                    overlappingPoints.add(p1)
+                }
+
+            }
+        }
+
+        return overlappingPoints
+
+    }
+
+    GetBspBoxNeighborDir(a_fromBox, a_toBox) {
+
+        var toLeft = a_fromBox.bottomLeftVec2.x - 1 == a_toBox.topRightVec2.x 
+        var toBot = a_fromBox.bottomLeftVec2.y - 1 == a_toBox.topRightVec2.y
+        var toRight = a_fromBox.topRightVec2.x + 1 == a_toBox.bottomLeftVec2.x
+        var toTop = a_fromBox.topRightVec2.y + 1 == a_toBox.bottomLeftVec2.y
+
+        if(toLeft)  return Vec2.new(-1,0)
+        if(toBot)   return Vec2.new(0,-1)
+        if(toRight) return Vec2.new(1,0)
+        if(toTop)   return Vec2.new(0,1)
+
+        return null
     }
 
     GenerateRandomWalk(){
@@ -519,8 +646,6 @@ class Grid {
         }
     }
 
-
-
     Render(){
 
         for(x in 0..._width){
@@ -547,16 +672,83 @@ class BspBox {
     construct new(a_bottomLeftVec2, a_topRightVec2){
         _bottomLeftVec2 = a_bottomLeftVec2
         _topRightVec2 = a_topRightVec2
-        _merged = false
+        _mergedWithBox = null
     }
 
     bottomLeftVec2 { _bottomLeftVec2 }
     topRightVec2 { _topRightVec2 }
     size { _topRightVec2 - _bottomLeftVec2 }
-    merged{_merged}
-    Merge(){
-        _merged = true
+    mergedWithBox {_mergedWithBox}
+    Merge(a_mergeWith){
+        _mergedWithBox = a_mergeWith
     } 
+
+    IsMerged() { _mergedWithBox != null }
+}
+
+class Room {
+    construct new() {
+        _roomTiles = List.new()
+        _roomNeighbors = List.new()
+        _box = null
+        _mergebox = null
+        _doors = null
+    }
+
+    AddTile(a_tile){
+        _roomTiles.add(a_tile)
+    }
+
+    AddTiles(a_tiles){
+        _roomTiles = _roomTiles + a_tiles
+    }
+
+    AddRoomNeighbor(a_room){
+        _roomNeighbors.add(a_room)
+    }
+
+    GetRoomTiles(){ _roomTiles }
+    GetRoomNeighbors(){ _roomNeighbors }
+
+    HasTile(a_tile){
+        for(tile in _roomTiles){
+            if(tile == a_tile) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    IsRoomNeighbor(a_room){
+        for(room in _roomNeighbors){
+            if(room == a_room){
+                return true
+            }
+        }
+        return false
+    }
+
+    GetBox() {
+        return _box
+    }
+    GetMergebox() {
+        return _mergebox
+    }
+
+    SetBox(a_box) {
+        _box = a_box
+    }
+
+    SetMergebox(a_box){
+        _mergebox = a_box
+    }
+
+    GetDoors() { _doors }
+    SetDoors(a_doors) {
+        _doors = a_doors
+    }
+
 }
 
 class TileType {
