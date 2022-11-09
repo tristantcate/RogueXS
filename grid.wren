@@ -223,6 +223,84 @@ class Grid {
             }
         }
 
+        var mergeChance = 0.75
+
+        var mergedRoomTilesToRemove = List.new()
+
+        //Merge some rooms
+        for (box in boxes) {
+            if(box.merged){
+                continue
+            }
+
+            if(_rand.float(0.0, 1.0) < mergeChance){
+
+                for(mergeBox in boxes){
+
+                    if(box.merged){
+                        break
+                    }
+
+                    if(box == mergeBox || mergeBox.merged){
+                        continue
+                    }
+
+                    //Merge box in different function or some shit
+
+                    if(box.topRightVec2.x.round == mergeBox.bottomLeftVec2.x.round) {
+
+                        System.print("Merging box [BL:%(box.bottomLeftVec2) TR:%(box.topRightVec2)] with box [BL:%(mergeBox.bottomLeftVec2) TR:%(mergeBox.topRightVec2)]")
+
+                        for(y1 in box.bottomLeftVec2.y.round + 1...box.topRightVec2.y.round){
+                            for(y2 in mergeBox.bottomLeftVec2.y.round + 1...mergeBox.topRightVec2.y.round){
+                                
+                                if(y1.round == y2.round){
+
+
+                                    mergedRoomTilesToRemove.add(Vec2.new(box.topRightVec2.x.round, y1))
+                                    //this.SetTile(box.topRightVec2.x.round, y1, _tileTypes[1])
+                                    System.print("Walltile Removed: %(box.topRightVec2.x), %(y1)")
+
+                                    Fiber.yield(yieldTime) 
+                                }
+
+                            }
+                        }
+
+                        box.Merge()
+                        mergeBox.Merge()
+                    }
+
+                    if(box.topRightVec2.y.round == mergeBox.bottomLeftVec2.y.round) {
+
+                        System.print("Merging box [BL:%(box.bottomLeftVec2) TR:%(box.topRightVec2)] with box [BL:%(mergeBox.bottomLeftVec2) TR:%(mergeBox.topRightVec2)]")
+
+                        for(x1 in box.bottomLeftVec2.x.round + 1...box.topRightVec2.x.round){
+                            for(x2 in mergeBox.bottomLeftVec2.x.round + 1...mergeBox.topRightVec2.x.round){
+                                
+                                if(x1.round == x2.round){
+
+
+                                    mergedRoomTilesToRemove.add(Vec2.new(x1, box.topRightVec2.y.round))
+                                    //this.SetTile(box.topRightVec2.x.round, y1, _tileTypes[1])
+                                    // System.print("Walltile Removed: %(x1, %(box.topRightVec2.y.round)")
+
+                                    Fiber.yield(yieldTime) 
+                                }
+
+                            }
+                        }
+
+                        box.Merge()
+                        mergeBox.Merge()
+                    }
+
+                }
+
+
+            }
+        }
+
 
         //Place walls along left and bottom of boxes
         for (box in boxes) {
@@ -247,6 +325,8 @@ class Grid {
             this.SetTile(_width - 1, y, _tileTypes[2])
         }
 
+
+        //Empty surrounded tiles
         for (x in 0..._width){
             for (y in 0..._height){
                 if(!getTile(x,y).passable && this.IsTileSurroundedByWalls(x,y)){
@@ -256,6 +336,15 @@ class Grid {
             }
         }
 
+        //Remove walls from merged rooms
+        for(mergeRoomTile in mergedRoomTilesToRemove){
+            this.SetTile(mergeRoomTile.x, mergeRoomTile.y, _tileTypes[1])
+            Fiber.yield(yieldTime)
+        }
+
+
+        //Connect rooms through the removal of single wall tile in wall
+        
     }
 
     GenerateRandomWalk(){
@@ -458,11 +547,16 @@ class BspBox {
     construct new(a_bottomLeftVec2, a_topRightVec2){
         _bottomLeftVec2 = a_bottomLeftVec2
         _topRightVec2 = a_topRightVec2
+        _merged = false
     }
 
     bottomLeftVec2 { _bottomLeftVec2 }
     topRightVec2 { _topRightVec2 }
     size { _topRightVec2 - _bottomLeftVec2 }
+    merged{_merged}
+    Merge(){
+        _merged = true
+    } 
 }
 
 class TileType {
