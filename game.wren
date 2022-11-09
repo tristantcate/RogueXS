@@ -8,7 +8,7 @@ import "xs_math" for Vec2
 
 import "grid" for Grid
 import "player" for Player, Enemy
-
+import "BSPGenerator" for BSPGenerator
 
 class Game {
 
@@ -55,13 +55,17 @@ class Game {
 
         __fiberTime = __gameplayYieldTime
 
-        __gridRenderLoop = Fiber.new{__grid.GenerateBSP()}
+        // __gridRenderLoop = Fiber.new{__grid.GenerateRandomWalk()}
+
+        var bspgen = BSPGenerator.new(__grid)
+        __gridRenderLoop = Fiber.new{bspgen.GenerateBSP()}
+        
         __gameLoop = Fiber.new{this.GameLoop()}
 
         __currentLoop = __gridRenderLoop
         __currentYieldTime = __gridRenderYieldTime
 
-        __grid.GenerateBSP()
+        bspgen.GenerateBSP()
         
     }    
 
