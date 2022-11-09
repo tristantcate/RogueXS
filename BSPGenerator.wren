@@ -14,7 +14,7 @@ class BSPGenerator {
 
     }
 
-    GenerateBSP(){
+    GenerateBSP(a_mergeRooms){
         var yieldTime = 0.005
 
         for (tile in 0..._width * _height) {
@@ -145,61 +145,67 @@ class BSPGenerator {
         var mergedRoomTilesToRemove = List.new()
 
         //Merge some rooms
-        for (box in boxes) {
-            if(box.IsMerged()){
-                continue
-            }
+        if(a_mergeRooms){
 
-            if(_rand.float(0.0, 1.0) < mergeChance){
+            for (box in boxes) {
+                if(box.IsMerged()){
+                    continue
+                }
 
-                for(mergeBox in boxes){
+                if(_rand.float(0.0, 1.0) < mergeChance){
 
-                    if(box.IsMerged()){
-                        break
-                    }
+                    for(mergeBox in boxes){
 
-                    if(box == mergeBox || mergeBox.IsMerged()){
-                        continue
-                    }
-
-
-                    var removableRoomTiles = List.new()
-
-                    if(box.topRightVec2.x.round == mergeBox.bottomLeftVec2.x.round) {
-                        
-                        for (overlapPoint in this.GetOverlappingLinePoints(box.bottomLeftVec2.y, box.topRightVec2.y, mergeBox.bottomLeftVec2.y, mergeBox.topRightVec2.y)){
-                            removableRoomTiles.add(Vec2.new(box.topRightVec2.x.round, overlapPoint))
+                        if(box.IsMerged()){
+                            break
                         }
-                    }
 
-                    if(box.topRightVec2.y.round == mergeBox.bottomLeftVec2.y.round) {
-
-                        for (overlapPoint in (this.GetOverlappingLinePoints(box.bottomLeftVec2.y, box.topRightVec2.y, mergeBox.bottomLeftVec2.y, mergeBox.topRightVec2.y))) {
-                            removableRoomTiles.add(Vec2.new(overlapPoint, box.topRightVec2.y.round))
+                        if(box == mergeBox || mergeBox.IsMerged()){
+                            continue
                         }
+
+
+                        var removableRoomTiles = List.new()
+
+                        if(box.topRightVec2.x.round == mergeBox.bottomLeftVec2.x.round) {
+                            
+                            for (overlapPoint in this.GetOverlappingLinePoints(box.bottomLeftVec2.y, box.topRightVec2.y, mergeBox.bottomLeftVec2.y, mergeBox.topRightVec2.y)){
+                                removableRoomTiles.add(Vec2.new(box.topRightVec2.x.round, overlapPoint))
+                            }
+                        }
+
+                        if(box.topRightVec2.y.round == mergeBox.bottomLeftVec2.y.round) {
+
+                            for (overlapPoint in (this.GetOverlappingLinePoints(box.bottomLeftVec2.y, box.topRightVec2.y, mergeBox.bottomLeftVec2.y, mergeBox.topRightVec2.y))) {
+                                removableRoomTiles.add(Vec2.new(overlapPoint, box.topRightVec2.y.round))
+                            }
+                        }
+                            
+                        mergedRoomTilesToRemove = mergedRoomTilesToRemove + removableRoomTiles
+
+                        box.Merge(mergeBox)
+                        mergeBox.Merge(box)
+
+                        var newRoom = Room.new()
+                        for(tile in removableRoomTiles){
+                            newRoom.AddTile(_grid.getTile(tile.x, tile.y))
+                        }
+
+                        newRoom.SetBox(box)
+                        newRoom.SetMergebox(mergeBox)
+
+                        newRoom.AddTiles(_grid.GetTilesFromBspBox(box))
+                        newRoom.AddTiles(_grid.GetTilesFromBspBox(mergeBox))
+
+                        _rooms.add(newRoom)
+
                     }
-                        
-                    mergedRoomTilesToRemove = mergedRoomTilesToRemove + removableRoomTiles
-
-                    box.Merge(mergeBox)
-                    mergeBox.Merge(box)
-
-                    var newRoom = Room.new()
-                    for(tile in removableRoomTiles){
-                        newRoom.AddTile(_grid.getTile(tile.x, tile.y))
-                    }
-
-                    newRoom.SetBox(box)
-                    newRoom.SetMergebox(mergeBox)
-
-                    newRoom.AddTiles(_grid.GetTilesFromBspBox(box))
-                    newRoom.AddTiles(_grid.GetTilesFromBspBox(mergeBox))
-
-                    _rooms.add(newRoom)
-
                 }
             }
+
         }
+
+        
 
         //Create Rooms from boxes
 
@@ -216,26 +222,59 @@ class BSPGenerator {
             newRoom.SetBox(box)
 
             _rooms.add(newRoom)
+            
 
         }
 
 
         //Give every room appropriate neighbors
 
-        for (room in _rooms){
+        for (i in  0..._rooms.count - 1){
+
+            var room = _rooms[i]
+            var neighborRoom = _rooms[i + 1]
 
             var box = null
             var neighBox = null
             var neighDir = null
 
-            for(neighborRoom in _rooms){
-                
-                if(room == neighborRoom || room.GetRoomNeighbors().contains(neighborRoom)){
-                    continue
-                }
+            if(room.GetRoomNeighbors().contains(neighborRoom)){
+                continue
+            }
 
+
+            
+            if(room.GetMergebox() == null && neighborRoom.GetMergebox() == null){
                 box = room.GetBox()
                 neighBox = neighborRoom.GetBox()
+                neighDir = this.GetBspBoxNeighborDir(box, neighBox)
+
+                if(neighDir != Vec2.new(0,0)){
+                    room.AddRoomNeighbor(neighborRoom)
+
+                    room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
+
+                    continue
+                }
+            }
+            
+            if(room.GetMergebox() != null && neighborRoom.GetMergebox() == null) {
+                box = room.GetMergebox()
+                neighBox = neighborRoom.GetBox()
+                neighDir = this.GetBspBoxNeighborDir(box, neighBox)
+
+                if(neighDir != Vec2.new(0,0)){
+                    room.AddRoomNeighbor(neighborRoom)
+
+                    room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
+
+                    continue
+                }
+            } 
+            
+            if(room.GetMergebox() == null && neighborRoom.GetMergebox() != null) {
+                box = room.GetBox()
+                neighBox = neighborRoom.GetMergebox()
                 neighDir = this.GetBspBoxNeighborDir(box, neighBox)
                 
                 if(neighDir != Vec2.new(0,0)){
@@ -245,52 +284,23 @@ class BSPGenerator {
 
                     continue
                 }
-                
-                if(room.GetMergebox() != null) {
-                    box = room.GetMergebox()
-                    neighBox = neighborRoom.GetBox()
-                    neighDir = this.GetBspBoxNeighborDir(box, neighBox)
-
-                    if(neighDir != Vec2.new(0,0)){
-                        room.AddRoomNeighbor(neighborRoom)
-
-                        room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
-
-                        continue
-                    }
-                }
-                
-                if(neighborRoom.GetMergebox() != null) {
-                    box = room.GetBox()
-                    neighBox = neighborRoom.GetMergebox()
-                    neighDir = this.GetBspBoxNeighborDir(box, neighBox)
-                    
-                if(neighDir != Vec2.new(0,0)){
-                        room.AddRoomNeighbor(neighborRoom)
-
-                        room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
-
-                        continue
-                    }
-                }
-                
-                if(room.GetMergebox() != null && neighborRoom.GetMergebox() != null) {
-                    box = room.GetMergebox()
-                    neighBox = neighborRoom.GetMergebox()
-                    neighDir = this.GetBspBoxNeighborDir(box, neighBox)
-
-                    
-                    if(neighDir != Vec2.new(0,0)){
-                        room.AddRoomNeighbor(neighborRoom)
-
-                        room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
-
-                        continue
-                    }
-                }
-
-                
             }
+            
+            if(room.GetMergebox() != null && neighborRoom.GetMergebox() != null) {
+                box = room.GetMergebox()
+                neighBox = neighborRoom.GetMergebox()
+                neighDir = this.GetBspBoxNeighborDir(box, neighBox)
+
+                
+                if(neighDir != Vec2.new(0,0)){
+                    room.AddRoomNeighbor(neighborRoom)
+
+                    room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
+
+                    continue
+                }
+            }
+
         }
 
         //Place walls along left and bottom of boxes
@@ -351,6 +361,21 @@ class BSPGenerator {
             }
         }
 
+        System.print("Room amount = %(_rooms.count) !!")
+
+    }
+
+    AddNeighborAndDoorToRoomIfBoxesOverlap(a_room, a_neighRoom, a_box1, a_box2){
+
+        var neighDir = this.GetBspBoxNeighborDir(a_box1, a_box2)
+                    
+        if(neighDir != Vec2.new(0,0)){
+            room.AddRoomNeighbor(neighborRoom)
+
+            room.AddDoor(this.GetDoorFromBoxes(a_box1, a_box2, neighDir))
+
+            //continue
+        }
     }
 
     GetDoorFromBoxes(a_fromBox, a_toBox, a_neighDir){
@@ -366,7 +391,7 @@ class BSPGenerator {
             System.print("Possible door amount: %(possibleDoorPlaces.count)")
 
             if(possibleDoorPlaces.count == 0) return Vec2.new(0,0)
-            return Vec2.new(a_fromBox.topRightVec2.x, possibleDoorPlaces[_rand.int(0, possibleDoorPlaces.count)])
+            return Vec2.new(a_fromBox.topRightVec2.x, possibleDoorPlaces[_rand.int(1, possibleDoorPlaces.count - 1)])
         }
 
         if(a_neighDir == Vec2.new(-1,0)) {
@@ -379,7 +404,7 @@ class BSPGenerator {
 
             if(possibleDoorPlaces.count == 0) return Vec2.new(0,0)
 
-            return Vec2.new(a_fromBox.bottomLeftVec2.x, possibleDoorPlaces[_rand.int(0, possibleDoorPlaces.count)])
+            return Vec2.new(a_fromBox.bottomLeftVec2.x, possibleDoorPlaces[_rand.int(1, possibleDoorPlaces.count - 1)])
         }
 
         if(a_neighDir == Vec2.new(0,1)) {
@@ -392,7 +417,7 @@ class BSPGenerator {
 
             if(possibleDoorPlaces.count == 0) return Vec2.new(0,0)
 
-            return Vec2.new(possibleDoorPlaces[_rand.int(0, possibleDoorPlaces.count)], a_fromBox.topRightVec2.y)
+            return Vec2.new(possibleDoorPlaces[_rand.int(1, possibleDoorPlaces.count - 1)], a_fromBox.topRightVec2.y)
         }
 
         if(a_neighDir == Vec2.new(0,-1)) {
@@ -405,7 +430,7 @@ class BSPGenerator {
 
             if(possibleDoorPlaces.count == 0) return Vec2.new(0,0)
 
-            return Vec2.new(possibleDoorPlaces[_rand.int(0, possibleDoorPlaces.count)], a_fromBox.bottomLeftVec2.y)
+            return Vec2.new(possibleDoorPlaces[_rand.int(1, possibleDoorPlaces.count - 1)], a_fromBox.bottomLeftVec2.y)
         }
 
         return Vec2.new(0,0)
@@ -435,12 +460,11 @@ class BSPGenerator {
 
     GetBspBoxNeighborDir(a_fromBox, a_toBox) {
 
-        System.print("GETBSPNEGHDIR called bro~")
 
-        var toLeft = a_fromBox.bottomLeftVec2.x == a_toBox.topRightVec2.x
-        var toBot = a_fromBox.bottomLeftVec2.y == a_toBox.topRightVec2.y
-        var toRight = a_fromBox.topRightVec2.x == a_toBox.bottomLeftVec2.x
-        var toTop = a_fromBox.topRightVec2.y == a_toBox.bottomLeftVec2.y
+        var toLeft = a_fromBox.bottomLeftVec2.x.round == a_toBox.topRightVec2.x.round
+        var toBot = a_fromBox.bottomLeftVec2.y.round == a_toBox.topRightVec2.y.round
+        var toRight = a_fromBox.topRightVec2.x.round == a_toBox.bottomLeftVec2.x.round
+        var toTop = a_fromBox.topRightVec2.y.round == a_toBox.bottomLeftVec2.y.round
 
         if(toLeft){
             System.print("GETBSPNEGHDIR LEFT~!!~")
@@ -531,7 +555,7 @@ class Room {
     }
 
     AddDoor(a_door){
-        _doors.add(a_door)
+        _doors.add(Vec2.new(a_door.x.round, a_door.y.round))
     }
 
 }

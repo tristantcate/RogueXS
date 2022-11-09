@@ -58,14 +58,14 @@ class Game {
         // __gridRenderLoop = Fiber.new{__grid.GenerateRandomWalk()}
 
         var bspgen = BSPGenerator.new(__grid)
-        __gridRenderLoop = Fiber.new{bspgen.GenerateBSP()}
+        __gridRenderLoop = Fiber.new{bspgen.GenerateBSP(false)}
         
         __gameLoop = Fiber.new{this.GameLoop()}
 
         __currentLoop = __gridRenderLoop
         __currentYieldTime = __gridRenderYieldTime
 
-        bspgen.GenerateBSP()
+        bspgen.GenerateBSP(false)
         
     }    
 
