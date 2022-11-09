@@ -182,6 +182,48 @@ class Grid {
         System.print("Done splitting boxes")
         
 
+        var boxIndentChance = 0.4
+
+        //Give all boxes chance to get indented
+        for (box in boxes) {
+            if(_rand.float(0.0, 1.0) < boxIndentChance){
+                
+                var leftIndentBool = _rand.float(0.0,1.0) > 0.5
+                if(leftIndentBool){
+
+                    for(boxY in box.bottomLeftVec2.y...box.topRightVec2.y){
+                        this.SetTile(box.bottomLeftVec2.x, boxY, _tileTypes[2])
+                        Fiber.yield(yieldTime)
+                    }
+
+                    box.bottomLeftVec2.x = box.bottomLeftVec2.x + 1
+
+                    for(boxY in box.bottomLeftVec2.y...box.topRightVec2.y){
+                        this.SetTile(box.bottomLeftVec2.x, boxY, _tileTypes[2])
+                        Fiber.yield(yieldTime)
+                    }
+                    
+                    box.bottomLeftVec2.x = box.bottomLeftVec2.x + 1
+
+                } else{
+
+                    for(boxX in box.bottomLeftVec2.x...box.topRightVec2.x){
+                        this.SetTile(boxX, box.bottomLeftVec2.y, _tileTypes[2])
+                        Fiber.yield(yieldTime)
+                    }
+                    box.bottomLeftVec2.y = box.bottomLeftVec2.y + 1
+
+                    for(boxX in box.bottomLeftVec2.x...box.topRightVec2.x){
+                        this.SetTile(boxX, box.bottomLeftVec2.y, _tileTypes[2])
+                        Fiber.yield(yieldTime)
+                    }
+                    box.bottomLeftVec2.y = box.bottomLeftVec2.y + 1
+                } 
+
+            }
+        }
+
+
         //Place walls along left and bottom of boxes
         for (box in boxes) {
             for(boxX in box.bottomLeftVec2.x...box.topRightVec2.x){
@@ -203,6 +245,15 @@ class Grid {
 
         for(y in 0..._height){
             this.SetTile(_width - 1, y, _tileTypes[2])
+        }
+
+        for (x in 0..._width){
+            for (y in 0..._height){
+                if(!getTile(x,y).passable && this.IsTileSurroundedByWalls(x,y)){
+                    this.SetTile(x,y, _tileTypes[0])
+                    Fiber.yield(yieldTime)
+                }
+            }
         }
 
     }
@@ -293,19 +344,7 @@ class Grid {
 
                 if(!getTile(x,y).passable){
 
-                    var rightWalktile = !getTile(x + 1, y).passable || !this.IsTileInBounds(x + 1, y)
-                    var leftWalktile =  !getTile(x - 1, y).passable || !this.IsTileInBounds(x - 1, y)
-                    var upWalktile =    !getTile(x, y + 1).passable || !this.IsTileInBounds(x, y + 1)
-                    var downWalktile =  !getTile(x, y - 1).passable || !this.IsTileInBounds(x, y - 1)
-
-                    var upRightWalktile =   !getTile(x + 1, y + 1).passable || !this.IsTileInBounds(x + 1, y + 1)
-                    var upLeftWalktile =    !getTile(x - 1, y + 1).passable || !this.IsTileInBounds(x - 1, y + 1)
-                    var downRightWalktile = !getTile(x + 1, y - 1).passable || !this.IsTileInBounds(x + 1, y - 1)
-                    var downLeftWalktile =  !getTile(x - 1, y - 1).passable || !this.IsTileInBounds(x - 1, y - 1)
-
-                    var noWalkableAroundTile = rightWalktile && leftWalktile && upWalktile && downWalktile && upRightWalktile && upLeftWalktile && downRightWalktile && downLeftWalktile
-                    
-                    if(noWalkableAroundTile){
+                    if(this.IsTileSurroundedByWalls(x,y)){
                         this.SetTile(x,y, _tileTypes[0])
                     }
 
@@ -324,12 +363,26 @@ class Grid {
             }
         }
 
+    }
 
-        for(box in boxes){   
-           
-        }
+    IsTileSurroundedByWalls(a_x, a_y){
+        var rightWalktile = !getTile(a_x + 1, a_y).passable || !this.IsTileInBounds(a_x + 1, a_y)
+        var leftWalktile =  !getTile(a_x - 1, a_y).passable || !this.IsTileInBounds(a_x - 1, a_y)
+        var upWalktile =    !getTile(a_x, a_y + 1).passable || !this.IsTileInBounds(a_x, a_y + 1)
+        var downWalktile =  !getTile(a_x, a_y - 1).passable || !this.IsTileInBounds(a_x, a_y - 1)
 
+        var upRightWalktile =   !getTile(a_x + 1, a_y + 1).passable || !this.IsTileInBounds(a_x + 1, a_y + 1)
+        var upLeftWalktile =    !getTile(a_x - 1, a_y + 1).passable || !this.IsTileInBounds(a_x - 1, a_y + 1)
+        var downRightWalktile = !getTile(a_x + 1, a_y - 1).passable || !this.IsTileInBounds(a_x + 1, a_y - 1)
+        var downLeftWalktile =  !getTile(a_x - 1, a_y - 1).passable || !this.IsTileInBounds(a_x - 1, a_y - 1)
 
+        return rightWalktile && leftWalktile && upWalktile && downWalktile && upRightWalktile && upLeftWalktile && downRightWalktile && downLeftWalktile
+       
+        
+    }
+
+    IsTileSurroundedByWalls(a_tileVec2){
+            return this.IsTileSurroundedByWalls(a_tileVec2.x, a_tileVec2.y)
     }
 
     
