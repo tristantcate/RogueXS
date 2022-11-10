@@ -21,10 +21,9 @@ class Grid {
         _tileTypes.add(TileType.new("[game]/Art/Tiles/wall0.png", "BrownTile", false))
 
         _rand = Random.new()
-        
 
-        // this.GenerateSymmetricRoom()
-
+       // _walkableTiles = List.new()
+    
         
     }
     

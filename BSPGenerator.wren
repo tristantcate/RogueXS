@@ -230,76 +230,79 @@ class BSPGenerator {
         //Give every room appropriate neighbors
 
         for (i in  0..._rooms.count - 1){
+            for(i2 in i + 1..._rooms.count){
+                    
+                var room = _rooms[i]
+                var neighborRoom = _rooms[i2]
 
-            var room = _rooms[i]
-            var neighborRoom = _rooms[i + 1]
+                var box = null
+                var neighBox = null
+                var neighDir = null
 
-            var box = null
-            var neighBox = null
-            var neighDir = null
-
-            if(room.GetRoomNeighbors().contains(neighborRoom)){
-                continue
-            }
-
-
-            
-            if(room.GetMergebox() == null && neighborRoom.GetMergebox() == null){
-                box = room.GetBox()
-                neighBox = neighborRoom.GetBox()
-                neighDir = this.GetBspBoxNeighborDir(box, neighBox)
-
-                if(neighDir != Vec2.new(0,0)){
-                    room.AddRoomNeighbor(neighborRoom)
-
-                    room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
-
+                if(room.GetRoomNeighbors().contains(neighborRoom)){
                     continue
                 }
-            }
-            
-            if(room.GetMergebox() != null && neighborRoom.GetMergebox() == null) {
-                box = room.GetMergebox()
-                neighBox = neighborRoom.GetBox()
-                neighDir = this.GetBspBoxNeighborDir(box, neighBox)
 
-                if(neighDir != Vec2.new(0,0)){
-                    room.AddRoomNeighbor(neighborRoom)
-
-                    room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
-
-                    continue
-                }
-            } 
-            
-            if(room.GetMergebox() == null && neighborRoom.GetMergebox() != null) {
-                box = room.GetBox()
-                neighBox = neighborRoom.GetMergebox()
-                neighDir = this.GetBspBoxNeighborDir(box, neighBox)
-                
-                if(neighDir != Vec2.new(0,0)){
-                    room.AddRoomNeighbor(neighborRoom)
-
-                    room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
-
-                    continue
-                }
-            }
-            
-            if(room.GetMergebox() != null && neighborRoom.GetMergebox() != null) {
-                box = room.GetMergebox()
-                neighBox = neighborRoom.GetMergebox()
-                neighDir = this.GetBspBoxNeighborDir(box, neighBox)
 
                 
-                if(neighDir != Vec2.new(0,0)){
-                    room.AddRoomNeighbor(neighborRoom)
+                if(room.GetMergebox() == null && neighborRoom.GetMergebox() == null){
+                    box = room.GetBox()
+                    neighBox = neighborRoom.GetBox()
+                    neighDir = this.GetBspBoxNeighborDir(box, neighBox)
 
-                    room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
+                    if(neighDir != Vec2.new(0,0)){
+                        room.AddRoomNeighbor(neighborRoom)
 
-                    continue
+                        room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
+
+                        continue
+                    }
+                }
+                
+                if(room.GetMergebox() != null && neighborRoom.GetMergebox() == null) {
+                    box = room.GetMergebox()
+                    neighBox = neighborRoom.GetBox()
+                    neighDir = this.GetBspBoxNeighborDir(box, neighBox)
+
+                    if(neighDir != Vec2.new(0,0)){
+                        room.AddRoomNeighbor(neighborRoom)
+
+                        room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
+
+                        continue
+                    }
+                } 
+                
+                if(room.GetMergebox() == null && neighborRoom.GetMergebox() != null) {
+                    box = room.GetBox()
+                    neighBox = neighborRoom.GetMergebox()
+                    neighDir = this.GetBspBoxNeighborDir(box, neighBox)
+                    
+                    if(neighDir != Vec2.new(0,0)){
+                        room.AddRoomNeighbor(neighborRoom)
+
+                        room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
+
+                        continue
+                    }
+                }
+                
+                if(room.GetMergebox() != null && neighborRoom.GetMergebox() != null) {
+                    box = room.GetMergebox()
+                    neighBox = neighborRoom.GetMergebox()
+                    neighDir = this.GetBspBoxNeighborDir(box, neighBox)
+
+                    
+                    if(neighDir != Vec2.new(0,0)){
+                        room.AddRoomNeighbor(neighborRoom)
+
+                        room.AddDoor(this.GetDoorFromBoxes(box, neighBox, neighDir))
+
+                        continue
+                    }
                 }
             }
+            
 
         }
 
