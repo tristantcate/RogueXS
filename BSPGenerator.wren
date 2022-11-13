@@ -14,8 +14,8 @@ class BSPGenerator {
 
     }
 
-    GenerateBSP(a_mergeRooms){
-        var yieldTime = 0.005
+    GenerateBSPFiber(a_mergeRooms, a_ignoreYield){
+        var yieldTime = 0.001
 
         for (tile in 0..._width * _height) {
                 _grid.GetTiles().add(Tile.new(_grid.GetTileTypeByIndex(1)))
@@ -29,6 +29,7 @@ class BSPGenerator {
 
         var done = false
 
+        Fiber.yield(yieldTime)
 
 
         while(!done){
@@ -56,8 +57,6 @@ class BSPGenerator {
                     newBoxList.add(BspBox.new(newBox1BotLeft, newBox1TopRight))
                     newBoxList.add(BspBox.new(newBox2BotLeft, newBox2TopRight))
 
-                    System.print("Splitting X")
-
                 }else{
                     //split over Y axis
 
@@ -73,9 +72,6 @@ class BSPGenerator {
                     newBoxList.add(BspBox.new(newBox1BotLeft, newBox1TopRight))
                     newBoxList.add(BspBox.new(newBox2BotLeft, newBox2TopRight))
 
-                    System.print("Splitting Y")
-
-
                 }
             }
 
@@ -83,11 +79,8 @@ class BSPGenerator {
 
             done = true
 
-            System.print("Current Boxes")
             for(i in 0...boxes.count){
                 
-                System.print("Box[%(i)], LeftBotPos: %(boxes[i].bottomLeftVec2), RightTopPos: %(boxes[i].topRightVec2), size: %(boxes[i].size)")
-
                 if(boxes[i].size.x > maxBoxSize.x && boxes[i].size.y > maxBoxSize.y){
                     done = false
                     break
@@ -96,7 +89,8 @@ class BSPGenerator {
 
         }
 
-        System.print("Done splitting boxes")
+        
+        Fiber.yield(yieldTime)
         
 
         var boxIndentChance = 0.4
@@ -110,14 +104,14 @@ class BSPGenerator {
 
                     for(boxY in box.bottomLeftVec2.y...box.topRightVec2.y){
                         _grid.SetTile(box.bottomLeftVec2.x, boxY, _grid.GetTileTypeByIndex(2))
-                        Fiber.yield(yieldTime)
+                         if(!a_ignoreYield) Fiber.yield(yieldTime)
                     }
 
                     box.bottomLeftVec2.x = box.bottomLeftVec2.x + 1
 
                     for(boxY in box.bottomLeftVec2.y...box.topRightVec2.y){
                         _grid.SetTile(box.bottomLeftVec2.x, boxY, _grid.GetTileTypeByIndex(2))
-                        Fiber.yield(yieldTime)
+                         if(!a_ignoreYield) Fiber.yield(yieldTime)
                     }
                     
                     box.bottomLeftVec2.x = box.bottomLeftVec2.x + 1
@@ -126,19 +120,22 @@ class BSPGenerator {
 
                     for(boxX in box.bottomLeftVec2.x...box.topRightVec2.x){
                         _grid.SetTile(boxX, box.bottomLeftVec2.y, _grid.GetTileTypeByIndex(2))
-                        Fiber.yield(yieldTime)
+                         if(!a_ignoreYield) Fiber.yield(yieldTime)
                     }
                     box.bottomLeftVec2.y = box.bottomLeftVec2.y + 1
 
                     for(boxX in box.bottomLeftVec2.x...box.topRightVec2.x){
                         _grid.SetTile(boxX, box.bottomLeftVec2.y, _grid.GetTileTypeByIndex(2))
-                        Fiber.yield(yieldTime)
+                         if(!a_ignoreYield) Fiber.yield(yieldTime)
                     }
                     box.bottomLeftVec2.y = box.bottomLeftVec2.y + 1
                 } 
 
             }
         }
+
+        Fiber.yield(yieldTime)
+
 
         var mergeChance = 0.75
 
@@ -206,6 +203,7 @@ class BSPGenerator {
         }
 
         
+        Fiber.yield(yieldTime)
 
         //Create Rooms from boxes
 
@@ -226,6 +224,7 @@ class BSPGenerator {
 
         }
 
+        Fiber.yield(yieldTime)
 
         //Give every room appropriate neighbors
 
@@ -306,18 +305,23 @@ class BSPGenerator {
 
         }
 
+        Fiber.yield(yieldTime)
+
         //Place walls along left and bottom of boxes
         for (box in boxes) {
             for(boxX in box.bottomLeftVec2.x...box.topRightVec2.x){
                 _grid.SetTile(boxX, box.bottomLeftVec2.y, _grid.GetTileTypeByIndex(2))
-                Fiber.yield(yieldTime)
+                 if(!a_ignoreYield) Fiber.yield(yieldTime)
             }
 
             for(boxY in box.bottomLeftVec2.y...box.topRightVec2.y){
                 _grid.SetTile(box.bottomLeftVec2.x, boxY, _grid.GetTileTypeByIndex(2))
-                Fiber.yield(yieldTime)
+                 if(!a_ignoreYield) Fiber.yield(yieldTime)
             }
         }
+
+        Fiber.yield(yieldTime)
+
 
 
         //place walls around the top and right
@@ -329,42 +333,43 @@ class BSPGenerator {
             _grid.SetTile(_width - 1, y, _grid.GetTileTypeByIndex(2))
         }
 
+        Fiber.yield(yieldTime)
+
 
         //Empty surrounded tiles
         for (x in 0..._width){
             for (y in 0..._height){
                 if(!_grid.getTile(x,y).passable && _grid.IsTileSurroundedByWalls(x,y)){
                     _grid.SetTile(x,y, _grid.GetTileTypeByIndex(0))
-                    Fiber.yield(yieldTime)
+                     if(!a_ignoreYield) Fiber.yield(yieldTime)
                 }
             }
         }
+        Fiber.yield(yieldTime)
 
         //Remove walls from merged rooms
         for(mergeRoomTile in mergedRoomTilesToRemove){
             _grid.SetTile(mergeRoomTile.x, mergeRoomTile.y, _grid.GetTileTypeByIndex(1))
-            Fiber.yield(yieldTime)
+             if(!a_ignoreYield) Fiber.yield(yieldTime)
         }
+
+        Fiber.yield(yieldTime)
 
         //Connect rooms through the removal of single wall tile in wall
         for (room in _rooms){
 
             var roomdoorcount = room.GetDoors().count
-            System.print("Room door amount: %(roomdoorcount)")
 
             for(door in room.GetDoors()){
 
-                System.print("Removing door: %(door)")
                 if(door == Vec2.new(0,0)){
                     continue
                 }
 
                 _grid.SetTile(door.x, door.y, _grid.GetTileTypeByIndex(1))
-                Fiber.yield(yieldTime)
+                if(!a_ignoreYield) Fiber.yield(yieldTime)
             }
         }
-
-        System.print("Room amount = %(_rooms.count) !!")
 
     }
 
@@ -383,15 +388,11 @@ class BSPGenerator {
 
     GetDoorFromBoxes(a_fromBox, a_toBox, a_neighDir){
 
-        System.print("GET DOOR FROM BOXES CALLED!")
-
         if(a_neighDir == Vec2.new(1,0)) {
 
             var possibleDoorPlaces = this.GetOverlappingLinePoints(
                 a_fromBox.bottomLeftVec2.y, a_fromBox.topRightVec2.y, 
                 a_toBox.bottomLeftVec2.y, a_toBox.topRightVec2.y)
-
-            System.print("Possible door amount: %(possibleDoorPlaces.count)")
 
             if(possibleDoorPlaces.count == 0) return Vec2.new(0,0)
             return Vec2.new(a_fromBox.topRightVec2.x, possibleDoorPlaces[_rand.int(1, possibleDoorPlaces.count - 1)])
@@ -402,8 +403,6 @@ class BSPGenerator {
             var possibleDoorPlaces = this.GetOverlappingLinePoints(
                 a_fromBox.bottomLeftVec2.y, a_fromBox.topRightVec2.y, 
                 a_toBox.bottomLeftVec2.y, a_toBox.topRightVec2.y)
-
-            System.print("Possible door amount: %(possibleDoorPlaces.count)")
 
             if(possibleDoorPlaces.count == 0) return Vec2.new(0,0)
 
@@ -416,8 +415,6 @@ class BSPGenerator {
                 a_fromBox.bottomLeftVec2.x, a_fromBox.topRightVec2.x, 
                 a_toBox.bottomLeftVec2.x, a_toBox.topRightVec2.x)
                 
-            System.print("Possible door amount: %(possibleDoorPlaces.count)")
-
             if(possibleDoorPlaces.count == 0) return Vec2.new(0,0)
 
             return Vec2.new(possibleDoorPlaces[_rand.int(1, possibleDoorPlaces.count - 1)], a_fromBox.topRightVec2.y)
@@ -428,8 +425,6 @@ class BSPGenerator {
             var possibleDoorPlaces = this.GetOverlappingLinePoints(
                 a_fromBox.bottomLeftVec2.x, a_fromBox.topRightVec2.x, 
                 a_toBox.bottomLeftVec2.x, a_toBox.topRightVec2.x)
-
-            System.print("Possible door amount: %(possibleDoorPlaces.count)")
 
             if(possibleDoorPlaces.count == 0) return Vec2.new(0,0)
 
@@ -469,23 +464,10 @@ class BSPGenerator {
         var toRight = a_fromBox.topRightVec2.x.round == a_toBox.bottomLeftVec2.x.round
         var toTop = a_fromBox.topRightVec2.y.round == a_toBox.bottomLeftVec2.y.round
 
-        if(toLeft){
-            System.print("GETBSPNEGHDIR LEFT~!!~")
-
-            return Vec2.new(-1,0)
-        }  
-        if(toBot){
-             System.print("GETBSPNEGHDIR BOT~!!~")
-            return Vec2.new(0,-1)
-        }   
-        if(toRight){
-             System.print("GETBSPNEGHDIR RIGHT~!!~")
-            return Vec2.new(1,0)
-        } 
-        if(toTop){
-             System.print("GETBSPNEGHDIR TOP~!!~")
-            return Vec2.new(0,1)
-        }
+        if(toLeft)  return Vec2.new(-1,0)
+        if(toBot)   return Vec2.new(0,-1)  
+        if(toRight) return Vec2.new(1,0)
+        if(toTop)   return Vec2.new(0,1)
 
         return Vec2.new(0,0)
     }

@@ -22,7 +22,7 @@ class Grid {
 
         _rand = Random.new()
 
-       // _walkableTiles = List.new()
+       _walkableTiles = List.new()
     
         
     }
@@ -35,7 +35,6 @@ class Grid {
         var x = a_x.round
         var y = a_y.round
         var index = (y * _width + x).round
-        // System.print("[%(x), %(y)]")
         return _tiles[index]
     }
 
@@ -110,9 +109,25 @@ class Grid {
         return tiles
     }
 
+    GetAllWalkableTilePositions() {
+
+        var walkableTiles = List.new()
+
+        for (x in _width){
+            for (y in _height){
+                var currentTile = getTile(x,y) 
+
+                if(!currentTile.passable && !currentTile.occupiedBy) {
+                    walkableTiles.add(Vec2.add(x,y))
+                }
+            }
+        }
+
+        return walkableTiles
+    }
     
 
-    GenerateRandomWalk(){
+    GenerateRandomWalkFiber(){
 
         for (tile in 0..._width * _height) {
                 _tiles.add(Tile.new(_tileTypes[2]))

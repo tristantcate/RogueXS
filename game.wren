@@ -36,18 +36,10 @@ class Game {
        
         __playerStartPos = Vec2.new(4.0, 7.0)
 
-        __actionables = List.new()
-
-
-        __player = Player.new("[game]/Art/hero.png", __grid, __playerStartPos)
-        __actionables.add(__player)
-
-        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(10, 5), __player))
-        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(14, 8), __player))
-        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(5, 12),__player))
-
-        __player.GiveTurn()
         __currentCharacterID = 0
+        __actionables = List.new()
+        __gameIsSetup = false
+        
 
        
         __gridRenderYieldTime = 0.05
@@ -55,17 +47,21 @@ class Game {
 
         __fiberTime = __gameplayYieldTime
 
+        __fiberList = List.new()
+        __currentFiberID = 0
+
         // __gridRenderLoop = Fiber.new{__grid.GenerateRandomWalk()}
-
         var bspgen = BSPGenerator.new(__grid)
-        __gridRenderLoop = Fiber.new{bspgen.GenerateBSP(false)}
-        
-        __gameLoop = Fiber.new{this.GameLoop()}
 
-        __currentLoop = __gridRenderLoop
+        __fiberList.add(FFiber.new(Fn.new{bspgen.GenerateBSPFiber(false, false)}, -0.01))
+        __fiberList.add(FFiber.new(Fn.new{this.SetupGameFiber()}, 0.25))
+        __fiberList.add(FFiber.new(Fn.new{this.GameLoopFiber()}, 0.25))
+
+        __currentLoop = __fiberList[0]
         __currentYieldTime = __gridRenderYieldTime
 
-        bspgen.GenerateBSP(false)
+        __fiberList[0].GetFunction().call()
+
         
     }    
 
@@ -73,31 +69,45 @@ class Game {
 
         __time = __time + dt
 
-        for (actionable in __actionables) {
-            actionable.Update(dt)
-        }
 
         if(__fiberTime == null){
             __fiberTime = 0
         }
 
         __fiberTime = __fiberTime - dt
+        
         if(__fiberTime <= 0) {
 
-            if(!__currentLoop.isDone){
-                __fiberTime = __currentLoop.call()
-            }else if(__currentLoop.isDone && __currentLoop == __gridRenderLoop){
-                __currentLoop = __gameLoop
-                __currentYieldTime = __gameplayYieldTime
+            if(!__currentLoop.GetFiber().isDone){
+                __fiberTime = __currentLoop.GetFiber().call()
+                __fiberTime = __currentLoop.GetFiberTime()
+            }else if(__currentLoop.GetFiber().isDone){
+                
+                this.SetNextFiber()
+
                 __fiberTime = 0
-                this.GameLoop()
             }
         }
 
 
+        if(!__gameIsSetup){
+            return
+        }
+
+        for (actionable in __actionables) {
+            actionable.Update(dt)
+        }
+
+    }
+    
+    static SetNextFiber() {
+        if(__currentFiberID < __fiberList.count - 1){
+            __currentFiberID = __currentFiberID + 1
+        }
         
-        
-        
+        __currentLoop = __fiberList[__currentFiberID]
+        System.print("Setting up fiber %(__currentFiberID)")
+                
     }
 
     // The render method is called once per tick, right after update.
@@ -105,14 +115,40 @@ class Game {
        
         __grid.Render()
 
+        if(!__gameIsSetup){
+            return
+        }
+
         for (actionable in __actionables) {
             actionable.Render()
         }
 
     }
 
-    static GameLoop(){
+    static SetupGameFiber(){
 
+        __player = Player.new("[game]/Art/hero.png", __grid, __playerStartPos)
+        __actionables.add(__player)
+
+
+        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(10, 5), __player))
+        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(14, 8), __player))
+        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(5, 12), __player))
+
+        System.print("ACtionables in game: %(__actionables.count)")
+
+        __player.GiveTurn()
+        
+        this.SetGameIsSetup(true)
+        
+    }
+
+    static SetGameIsSetup(a_bool){
+        __gameIsSetup = a_bool
+    }
+
+    static GameLoopFiber(){
+        
         while(true){
             var currentCharacter = 0
 
@@ -136,7 +172,18 @@ class Game {
             Fiber.yield(__currentYieldTime)
         }
 
-        System.print("Gameloop Ended!")
     }
         
+}
+
+class FFiber {
+    construct new(a_function, a_fiberTime){
+        _function = a_function
+        _fiber = Fiber.new { _function.call() } //This is not a fiber inside a fiber, fiber functions in _function dont work bro
+        _fiberTime = a_fiberTime
+    }
+
+    GetFunction() {_function}
+    GetFiber() {_fiber}
+    GetFiberTime() {_fiberTime}
 }
