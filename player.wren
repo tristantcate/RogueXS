@@ -94,6 +94,7 @@ class Enemy is Actionable {
     }
 
     Render(){
+
         var worldPos = super.GetGridRef().TileToWorldPos(super.GetGridPos())
             Render.sprite(_sprite, worldPos.x, worldPos.y, 1.0, _spriteSize.x, 0.0,
             0xFFFFFFFF, 0x00000000, Render.spriteCenter)
@@ -146,6 +147,7 @@ class Player is Actionable {
             super.SetTurn(false)
         }
 
+        super.GetGridRef().SetPlayerPosition(super.GetGridPos())
 
 
     }

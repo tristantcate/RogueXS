@@ -24,7 +24,12 @@ class Grid {
 
        _walkableTiles = List.new()
     
+        _playerPos = Vec2.new(-1,-1)
         
+    }
+
+    SetPlayerPosition(a_playerPos){
+        _playerPos = a_playerPos
     }
     
 
@@ -323,7 +328,14 @@ class Grid {
         }
     }
 
+    RGBAToHex(a_r, a_g, a_b, a_a){
+        return (1 << 32) + (a_r << 24) + (a_g << 16) + (a_b << 8) + a_a
+
+    }
+
     Render(){
+
+        
 
         for(x in 0..._width){
             for (y in 0..._height) {
@@ -332,14 +344,32 @@ class Grid {
                     continue
                 }
 
+                var colorA = 255
+
+                if(_playerPos != Vec2.new(-1,-1)){
+                    var playerMaxViewDist = 15.0
+                    var tileToPlayerDist = (_playerPos - Vec2.new(x,y)).magnitude
+
+                    var minColor = 0
+                    var maxColor = 255
+                    if(tileToPlayerDist > playerMaxViewDist){
+                        colorA = 0
+                    }else{
+                        colorA = Math.lerp(maxColor, minColor, tileToPlayerDist/playerMaxViewDist)
+                    }
+                }
+
                 var tilePos =  this.TileToWorldPos(x,y)
                 var tileSprite = getTile(x,y).tileSprite
                 var tileImgSize = getTile(x,y).tileImageSize
 
                 Render.sprite(tileSprite, tilePos.x, tilePos.y, -1.0, 
                 _tileSize.x / tileImgSize, 0.0, 
-                0xFFFFFFFF, 0x00000000, Render.spriteCenter)
+                this.RGBAToHex(255, 255, 255, colorA), 0x00000000, Render.spriteCenter)
             }
+
+
+            //Render  minimap
         }
     }
 

@@ -55,7 +55,7 @@ class Game {
         // __gridRenderLoop = Fiber.new{__grid.GenerateRandomWalk()}
         var bspgen = BSPGenerator.new(__grid)
 
-        __fiberList.add(FFiber.new(Fn.new{bspgen.GenerateBSPFiber(false, false)}, -0.01))
+        __fiberList.add(FFiber.new(Fn.new{bspgen.GenerateBSPFiber(false, true)}, -0.01))
         __fiberList.add(FFiber.new(Fn.new{this.SetupGameFiber()}, 0.25))
         __fiberList.add(FFiber.new(Fn.new{this.GameLoopFiber()}, 0.25))
 
@@ -146,14 +146,6 @@ class Game {
 
         Fiber.yield(0.1)
         
-        // __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(14, 8), __player))
-        
-        // Fiber.yield(0.1)
-        
-        // __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(5, 12), __player))
-
-        // System.print("ACtionables in game: %(__actionables.count)")
-
         __player.GiveTurn()
         Fiber.yield(0.1)
         
