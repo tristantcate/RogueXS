@@ -10,6 +10,8 @@ import "grid" for Grid
 import "player" for Player, Enemy
 import "BSPGenerator" for BSPGenerator
 
+import "random" for Random
+
 class Game {
 
 
@@ -29,7 +31,7 @@ class Game {
 
         __time = 0
 
-        
+        __rand = Random.new()
 
         __tileSize = Vec2.new(8.0, 8.0)
         __grid = Grid.new(40, 40, 0, __tileSize)
@@ -58,7 +60,7 @@ class Game {
         __fiberList.add(FFiber.new(Fn.new{this.GameLoopFiber()}, 0.25))
 
         __currentLoop = __fiberList[0]
-        __currentYieldTime = __gridRenderYieldTime
+        __currentYieldTime = 0.1
 
         __fiberList[0].GetFunction().call()
 
@@ -127,17 +129,33 @@ class Game {
 
     static SetupGameFiber(){
 
-        __player = Player.new("[game]/Art/hero.png", __grid, __playerStartPos)
+        var playerStartPos = __grid.GetRandomOpenTile()
+
+        __player = Player.new("[game]/Art/hero.png", __grid, playerStartPos)
         __actionables.add(__player)
 
+        Fiber.yield(0.1)
 
-        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(10, 5), __player))
-        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(14, 8), __player))
-        __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(5, 12), __player))
+        System.print("PlayerStartPos Set to: %(playerStartPos)")
 
-        System.print("ACtionables in game: %(__actionables.count)")
+        var enemyCount = 15
+        for(i in 0...enemyCount){
+            var randomPos = __grid.GetRandomOpenTile()
+            __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, randomPos, __player))
+        }
+
+        Fiber.yield(0.1)
+        
+        // __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(14, 8), __player))
+        
+        // Fiber.yield(0.1)
+        
+        // __actionables.add(Enemy.new("[game]/Art/ghoulEnemy.png", __grid, Vec2.new(5, 12), __player))
+
+        // System.print("ACtionables in game: %(__actionables.count)")
 
         __player.GiveTurn()
+        Fiber.yield(0.1)
         
         this.SetGameIsSetup(true)
         

@@ -42,6 +42,30 @@ class Grid {
 
     GetTiles() {_tiles}
 
+    GetOpenTilePositions() {
+        var tiles = List.new()
+
+
+        for (x in 0..._width) {
+            for (y in 0..._height) {
+
+
+                var currentTile = getTile(x,y)
+                if(currentTile.passable && !currentTile.IsOccupied()){
+                    tiles.add(Vec2.new(x,y))
+                }
+            
+            }
+        }
+
+        return tiles
+    }
+
+    GetRandomOpenTile(){
+        var tiles = this.GetOpenTilePositions()
+        return tiles[_rand.int(0, tiles.count)]
+    }
+
     SetTileToNull (a_x, a_y) { 
         _tiles[a_y * _width + a_x] = null
     }
