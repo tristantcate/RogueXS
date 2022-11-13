@@ -9,6 +9,14 @@ class Actionable {
 
         _gridRef = a_gridRef
         _gridPos = a_gridStartPos
+        _gridRef.getTile(a_gridStartPos).SetOccupiedBy(this)
+
+        _isPlayer = false
+    }
+
+    IsPlayer() {_isPlayer}
+    SetIsPlayer(a_isPlayer){
+        _isPlayer = a_isPlayer
     }
 
     GetGridRef() { _gridRef }
@@ -30,6 +38,8 @@ class Actionable {
         _gridRef.getTile(a_toTileVec2).SetOccupiedBy(this)
     }
     
+
+
     Update(a_deltaTime){}
     Render(){}
 }
@@ -112,7 +122,7 @@ class Player is Actionable {
         var playerImage = Render.loadImage(a_playerSpritePath)
         _sprite = Render.createSprite(playerImage, 0, 0, 1, 1)
         _spriteSize = a_gridRef.GetTileSize *  (1 / Render.getImageWidth(playerImage))
-
+        super.SetIsPlayer(true)
     }
 
 

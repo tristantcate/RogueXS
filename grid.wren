@@ -366,10 +366,32 @@ class Grid {
                 Render.sprite(tileSprite, tilePos.x, tilePos.y, -1.0, 
                 _tileSize.x / tileImgSize, 0.0, 
                 this.RGBAToHex(255, 255, 255, colorA), 0x00000000, Render.spriteCenter)
+            
+                //Render  minimap
+
+                var minimapOffset = Vec2.new(-250, -150)
+                var minimapSize = 2.0
+                if(!getTile(x,y).passable){
+                    Render.setColor(0.6, 0.6, 0.6) 
+                }
+
+                if(getTile(x,y).passable){
+                    Render.setColor(0.2, 0.2, 0.2)
+                }
+
+                if(getTile(x,y).occupiedBy != 0 &&  getTile(x,y).occupiedBy.IsPlayer()){
+                    Render.setColor(0, 1, 0)
+                }
+
+                if(getTile(x,y).occupiedBy != 0 && !getTile(x,y).occupiedBy.IsPlayer()){
+                    Render.setColor(1, 0, 0)
+                }
+
+                var squarePos = Vec2.new(x, y) * minimapSize + Vec2.new(minimapOffset.x,minimapOffset.y)
+
+                Render.square(squarePos.x, squarePos.y, minimapSize)
+            
             }
-
-
-            //Render  minimap
         }
     }
 
