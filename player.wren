@@ -1,6 +1,8 @@
 import "xs" for Render, Input
 import "xs_math" for Vec2, Math
 import "RogueXS_math" for MathF
+import "camera" for Camera
+
 
 class Actionable {
 
@@ -12,6 +14,7 @@ class Actionable {
         _gridRef.getTile(a_gridStartPos).SetOccupiedBy(this)
 
         _isPlayer = false
+
     }
 
     IsPlayer() {_isPlayer}
@@ -38,7 +41,7 @@ class Actionable {
         _gridRef.getTile(a_toTileVec2).SetOccupiedBy(this)
     }
     
-
+    
 
     Update(a_deltaTime){}
     Render(){}
@@ -105,7 +108,7 @@ class Enemy is Actionable {
 
     Render(){
 
-        var worldPos = super.GetGridRef().TileToWorldPos(super.GetGridPos())
+        var worldPos = super.GetGridRef().TileToWorldPos(super.GetGridPos()) - Camera.GetPosition()
             Render.sprite(_sprite, worldPos.x, worldPos.y, 1.0, _spriteSize.x, 0.0,
             0xFFFFFFFF, 0x00000000, Render.spriteCenter)
     }
@@ -165,6 +168,8 @@ class Player is Actionable {
     Render() {
 
         var playerWorldPos = super.GetGridRef().TileToWorldPos(super.GetGridPos())
+        Camera.SetPosition(playerWorldPos)
+        playerWorldPos = playerWorldPos - Camera.GetPosition() 
         Render.sprite(_sprite, playerWorldPos.x, playerWorldPos.y, 1.0, _spriteSize.x, 0.0,
         0xFFFFFFFF, 0x00000000, Render.spriteCenter)
     }

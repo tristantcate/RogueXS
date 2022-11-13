@@ -11,6 +11,7 @@ import "player" for Player, Enemy
 import "BSPGenerator" for BSPGenerator
 
 import "random" for Random
+import "camera" for Camera
 
 class Game {
 
@@ -32,8 +33,10 @@ class Game {
         __time = 0
 
         __rand = Random.new()
+        Camera.new()
 
-        __tileSize = Vec2.new(8.0, 8.0)
+
+        __tileSize = Vec2.new(16.0, 16.0)
         __grid = Grid.new(40, 40, 0, __tileSize)
        
         __playerStartPos = Vec2.new(4.0, 7.0)
@@ -57,7 +60,7 @@ class Game {
 
         __fiberList.add(FFiber.new(Fn.new{bspgen.GenerateBSPFiber(false, true)}, -0.01))
         __fiberList.add(FFiber.new(Fn.new{this.SetupGameFiber()}, 0.25))
-        __fiberList.add(FFiber.new(Fn.new{this.GameLoopFiber()}, 0.25))
+        __fiberList.add(FFiber.new(Fn.new{this.GameLoopFiber()}, 0.01))
 
         __currentLoop = __fiberList[0]
         __currentYieldTime = 0.1
@@ -87,7 +90,7 @@ class Game {
                 
                 this.SetNextFiber()
 
-                __fiberTime = 0
+                __fiberTime = __currentLoop.GetFiberTime()
             }
         }
 

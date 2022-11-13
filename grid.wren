@@ -1,6 +1,7 @@
 import "xs" for Render
 import "xs_math" for Vec2, Math
 import "random" for Random
+import "camera" for Camera
 
 class Grid {
     construct new(a_width, a_height, a_zero, a_tileSize) {
@@ -25,7 +26,12 @@ class Grid {
        _walkableTiles = List.new()
     
         _playerPos = Vec2.new(-1,-1)
+        _cameraPos = Vec2.new(0,0)
         
+    }
+
+    SetCameraPos(a_cameraPos){
+        _cameraPos = a_cameraPos
     }
 
     SetPlayerPosition(a_playerPos){
@@ -359,7 +365,7 @@ class Grid {
                     }
                 }
 
-                var tilePos =  this.TileToWorldPos(x,y)
+                var tilePos =  this.TileToWorldPos(x,y) - Camera.GetPosition()
                 var tileSprite = getTile(x,y).tileSprite
                 var tileImgSize = getTile(x,y).tileImageSize
 
